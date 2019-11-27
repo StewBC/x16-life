@@ -1,8 +1,8 @@
 ;-----------------------------------------------------------------------------
 ; x16-life.asm
 ;
-; Conway's game of life for Commander X16.  This sets the neighbour counts
-; in cells and thus does not need to check the neighbours to generate
+; Conway's game of life for Commander X16.  This sets the neighbor counts
+; in cells and thus does not need to check the neighbors to generate
 ; generations.  This version doesn't do wrapping - I spent a bit of time
 ; thinking about how to do wrapping but nothing came to mind that would
 ; be relatively easy, which is too bad.
@@ -11,7 +11,7 @@
 ; This is free and unencumbered software released into the public domain.
 
 ;-----------------------------------------------------------------------------
-NUMBER_PART   = %00001111                       ; number of neighbours mask
+NUMBER_PART   = %00001111                       ; number of neighbors mask
 ALIVE_NOW     = %01000000                       ; bit set for alive this generation
 ALIVE_NEXT    = %10000000                       ; bit set alive next generation
 THIS_GEN      = %01111111                       ; mask to unset next generation
@@ -61,7 +61,7 @@ jmp runLife                                     ; run the cycles
 
     jsr clearData                               ; clear the data section to 0's
     jsr setupPattern                            ; put a pattern into the data grid
-    jmp showCanvas                              ; fill in neighbours and display grid
+    jmp showCanvas                              ; fill in neighbors and display grid
 
 .endproc 
 
@@ -125,7 +125,7 @@ done:
 
 ;-----------------------------------------------------------------------------
 ; Show the pattern set in setupPattren and also init the cell grid with the
-; neighbour counts for the pattern
+; neighbor counts for the pattern
 .proc showCanvas
 
     lda #0                                      ; data0
@@ -156,7 +156,7 @@ loop:
     bit zAliveNowBit                            ; is it alive
     beq notAlive 
 
-    jsr cellAlive                               ; set the neighbour counts
+    jsr cellAlive                               ; set the neighbor counts
     lda #CELL_ALIVE                             ; VERA alive cell for display
     sta VERA_DATA0                              ; show the cell
     bne color
@@ -196,7 +196,7 @@ done:
 .endproc 
 
 ;-----------------------------------------------------------------------------
-; When a cell comes alive, increment the neighbour counts in all of its neighbours
+; When a cell comes alive, increment the neighbor counts in all of its neighbors
 .proc cellAlive
 
     sty zTempY                                  ; save Y so it can be restored before exit
@@ -211,16 +211,16 @@ done:
     inc zTempPtr + 1 
 :
     sec                                         ; move the temp ptr up a row and left a column
-    sbc #(COLUMNS + 1)                          ; so it points at the 1st neighbour (upper left)
+    sbc #(COLUMNS + 1)                          ; so it points at the 1st neighbor (upper left)
     sta zTempPtr
     bcs :+
     dec zTempPtr + 1
 
 :
     clc                                         ; clear carry and it will stay clear throughout
-    ldy #0                                      ; 1st neighbour is at offset 0 from temp ptr
+    ldy #0                                      ; 1st neighbor is at offset 0 from temp ptr
     lda (zTempPtr), y                           ; get the cell
-    adc #1                                      ; and increment the neighbour count
+    adc #1                                      ; and increment the neighbor count
     sta (zTempPtr), y                           ; and save that
 
     iny                                         ; cell above the newly alive cell
@@ -241,7 +241,7 @@ done:
 
     iny                                         ; new cell itself
     lda (zTempPtr), y
-    and #NUMBER_PART                            ; start with the neighbour count only
+    and #NUMBER_PART                            ; start with the neighbor count only
     ora #ALIVE_NOW                              ; and set it alive now
     sta (zTempPtr), y
 
@@ -273,7 +273,7 @@ done:
 .endproc
 
 ;-----------------------------------------------------------------------------
-; Decrement the neighbour count in all neighbours of the cell dying
+; Decrement the neighbor count in all neighbors of the cell dying
 ; exact inverse of cellAlive
 .proc cellDie
 
@@ -319,7 +319,7 @@ done:
 
     iny 
     lda (zTempPtr), y
-    and #NUMBER_PART                            ; strip down to only the neighbours
+    and #NUMBER_PART                            ; strip down to only the neighbors
     sta (zTempPtr), y
 
     iny 
@@ -373,11 +373,11 @@ outer:
 loop:
     lda (zCellPtr), y                           ; get the cell
     beq :+                                      ; if 0 display as a space
-    and #NUMBER_PART                            ; get the number of neighbours
+    and #NUMBER_PART                            ; get the number of neighbors
     adc #'0'                                    ; turn to a visible digit
     bne num                                     ; JuMP
 :
-    lda #CELL_DEAD                              ; show as a space if 0 neighbours
+    lda #CELL_DEAD                              ; show as a space if 0 neighbors
 
 num:
     sta VERA_DATA0                              ; show the space or number
@@ -413,7 +413,7 @@ done:
 ;-----------------------------------------------------------------------------
 ; 2 pass simulation.
 ; Pass 1, see who lives and dies
-; Pass 2, update neighbour counts and display the pattern
+; Pass 2, update neighbor counts and display the pattern
 .proc runLife
 
     lda #<(patternData + COLUMNS + 1)           ; set ptr to 1st visible cell
@@ -429,7 +429,7 @@ p1_outer:
 
 p1_loop:
     lda (zCellPtr), y                           ; get a cell
-    beq p1_next                                 ; if no neighbours, move on
+    beq p1_next                                 ; if no neighbors, move on
     bit zAliveNowBit                            ; is it alove now
     beq p1_notAliveNow                          ; 0 means did not match, so not alive now
 
@@ -444,7 +444,7 @@ p1_loop:
     bne p1_next                                 ; JuMP
 
 p1_notAliveNow:
-    cmp #3                                      ; does the dead cell have exactly 3 neighbours
+    cmp #3                                      ; does the dead cell have exactly 3 neighbors
     bne p1_next                                 ; no, then not coming alive
     ora #ALIVE_NEXT                             ; yes, 3.  So this will be alive next time
     sta (zCellPtr), y                           ; save that
@@ -492,14 +492,14 @@ p2_loop:
     jmp p2_next                                 ; and move on - no need to draw
 
 p2_notAliveNow:
-    jsr cellAlive                               ; dead cell comes alive.  Update neighbours
+    jsr cellAlive                               ; dead cell comes alive.  Update neighbors
     ldx #CELL_ALIVE                             ; save the draw code in x register
     bne draw                                    ; and go draw
 
 p2_notAliveNext:
     bit zAliveNowBit                            ; is this cell alive now
     beq p2_next                                 ; if not, then move on
-    jsr cellDie                                 ; this cell is now dead.  update neighbours
+    jsr cellDie                                 ; this cell is now dead.  update neighbors
     ldx #CELL_DEAD                              ; save the draw code in x register
 
 draw:
